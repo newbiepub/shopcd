@@ -1,3 +1,6 @@
+/**
+ * Define CD model
+ * */
 class CD {
     constructor(props) {
         this.id = props.id;

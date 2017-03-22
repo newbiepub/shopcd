@@ -1,3 +1,6 @@
+/**
+ * Define Cart Model
+ */
 class Cart {
     constructor(props) {
 

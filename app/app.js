@@ -1,14 +1,30 @@
+/**
+ * Import { * }
+ * @type {Router}
+ */
 const Router = require("router"),
     finalhandler = require("finalhandler"),
     http = require("http"),
     routes = require("./routes"),
     CD = require("./class/cd"),
     db = require("./db"),
-    faker = require("faker");
-
+    faker = require("faker"),
+    password = require('password-hash-and-salt'),
+    User = require("./class/user");
+/**
+ * Create Server
+ */
 const app = routes(new Router());
 const server = http.createServer();
-const boot = () => {
+
+/**
+ * Run When Server Started
+ * @param app
+ */
+const boot = (app) => {
+    /**
+     * Initial 500 CD-document
+     */
     db.get("CD", (err, res) => {
         if (err) {
             let data = [];
@@ -28,11 +44,37 @@ const boot = () => {
                 }
             })
         }
+    });
+    /**
+     * Create Admin User
+     */
+    db.get("User", (err, users) => {
+        if(err) {
+            let username = "lam@example.com";
+            // Create password with salt and hash
+            password("h1n2i3m4").hash(function (err, hash) {
+               if(!err) {
+                   let user = new User({username: username, password: hash});
+                   db.put("User", JSON.stringify([user]), (err) => {
+                       if(err) {
+                           console.log(err);
+                       }
+                   })
+               }
+            });
+        }
     })
 };
 
+/**
+ * Boot App
+ * */
+boot(app);
+
+/**
+ * On Request
+ */
 server.on("request", (req, res) => {
-    boot();
     app(req, res, finalhandler(req, res));
 });
 

@@ -5,6 +5,8 @@ const db = require("./db"),
     helmet = require('helmet'),
     cookieParser = require("cookie-parser"),
     _ = require("lodash");
+var JwtStrategy = require('passport-jwt').Strategy,
+    ExtractJwt = require('passport-jwt').ExtractJwt;
 module.exports = (app) => {
     app.use(bodyParser.urlencoded({extended: false}));
     app.use(bodyParser.json());
