@@ -7,7 +7,7 @@ const db = require("./db"),
     User = require("./class/user"),
     faker = require("faker"),
     _ = require("lodash");
-var JwtStrategy = require('passport-jwt').Strategy,
+const JwtStrategy = require('passport-jwt').Strategy,
     LocalStrategy = require('passport-local').Strategy,
     ExtractJwt = require('passport-jwt').ExtractJwt,
     passport = require('passport'),
@@ -102,6 +102,129 @@ module.exports = (app) => {
     });
     // ---------- CD -------------- //
 
+    // ------------ Category -----------//
+    /**
+     * Category count
+     */
+    app.get("/category/count", (req, res) => {
+        db.get("Category", (err, data) => {
+            data = JSON.parse(data);
+            if (!err) {
+                res.end(`${data.length}`);
+            }
+            res.end('0');
+        })
+    });
+
+    /**
+     * Category FindAll
+     */
+
+    app.get("/category/findAll", (req, res) => {
+        db.get("Category", (err, data) => {
+            if (!err && data) {
+                data = JSON.parse(data);
+                let results = _.filter(data, _.omit(req.query, ["limit", "skip"]));
+                if (req.query.limit != undefined) {
+                    results = results.splice(0, req.query.limit);
+                }
+                res.end(results.length ? JSON.stringify(results) : "[]");
+            }
+        })
+    });
+
+    /**
+     * Category FindOne
+     */
+    app.get("/category/findOne", (req, res) => {
+        db.get("Category", (err, data) => {
+            if (!err && data != undefined) {
+                data = JSON.parse(data);
+                let result = _.find(data, req.query);
+                res.end(result != undefined ? JSON.stringify(result) : "{}");
+            }
+        })
+    });
+
+    app.get("/category", (req, res) => {
+        db.get("Category", (err, value) => {
+            if (!err && value != undefined) {
+                let data = JSON.parse(value);
+                if (!err) {
+                    if (req.query.limit != undefined) {
+                        data = data.splice(0, req.query.limit);
+                    }
+                    res.end(data.length ? JSON.stringify(data) : "[]");
+                } else {
+                    res.end("No Data");
+                }
+            }
+        })
+    });
+
+    // ------------ Category -----------//
+
+    // ------------ Producer ------------- //
+
+    /**
+     * Category count
+     */
+    app.get("/producer/count", (req, res) => {
+        db.get("Producer", (err, data) => {
+            data = JSON.parse(data);
+            if (!err) {
+                res.end(`${data.length}`);
+            }
+            res.end('0');
+        })
+    });
+
+    /**
+     * Category FindAll
+     */
+
+    app.get("/producer/findAll", (req, res) => {
+        db.get("Producer", (err, data) => {
+            if (!err && data) {
+                data = JSON.parse(data);
+                let results = _.filter(data, _.omit(req.query, ["limit", "skip"]));
+                if (req.query.limit != undefined) {
+                    results = results.splice(0, req.query.limit);
+                }
+                res.end(results.length ? JSON.stringify(results) : "[]");
+            }
+        })
+    });
+
+    /**
+     * Category FindOne
+     */
+    app.get("/producer/findOne", (req, res) => {
+        db.get("Producer", (err, data) => {
+            if (!err && data != undefined) {
+                data = JSON.parse(data);
+                let result = _.find(data, req.query);
+                res.end(result != undefined ? JSON.stringify(result) : "{}");
+            }
+        })
+    });
+
+    app.get("/producer", (req, res) => {
+        db.get("Producer", (err, value) => {
+            if (!err && value != undefined) {
+                let data = JSON.parse(value);
+                if (!err) {
+                    if (req.query.limit != undefined) {
+                        data = data.splice(0, req.query.limit);
+                    }
+                    res.end(data.length ? JSON.stringify(data) : "[]");
+                } else {
+                    res.end("No Data");
+                }
+            }
+        })
+    });
+
     // ----------- User -----------//
 
     /**
@@ -147,6 +270,9 @@ module.exports = (app) => {
             }
         })
     }));
+    /**
+     * Login
+     */
     app.post("/login", (req, res, next) => {
         passport.authenticate("shopcd-local", (err, userId) => {
             if (err) {
@@ -155,12 +281,15 @@ module.exports = (app) => {
             if (!userId) {
                 return res.end(JSON.stringify(new Error(401, "Invalid Credential")));
             } else {
+                userId.exp = Math.floor(Date.now() / 1000) + (60 * 60);
                 var token = jsonwebtoken.sign(userId, secret);
                 return res.end(JSON.stringify({token: token}));
             }
         })(req, res, next)
     });
-
+    /**
+     * Authorize User
+     */
     app.get("/user/authorized", (req, res, next) => {
         passport.authenticate("shopcd-jwt", (err, user) => {
             if (err) {
@@ -173,7 +302,9 @@ module.exports = (app) => {
             }
         })(req, res, next);
     });
-
+    /**
+     * Sign Up
+     */
     app.post("/signup", (req, res, next) => {
         db.get("User", (err, users) => {
             users = JSON.parse(users);
@@ -205,7 +336,9 @@ module.exports = (app) => {
             }
         })
     });
-
+    /**
+     * User Count
+     */
     app.get("/user/count", (req, res, next) => {
         db.get("User", (err, users) => {
             users = JSON.parse(users);
@@ -215,8 +348,139 @@ module.exports = (app) => {
             res.end('0');
         })
     });
+    /**
+     * Check Role User
+     */
+    app.get("/currentUser", (req, res, next) => {
+        if (req.query.token != undefined) {
+            let decoded = jsonwebtoken.verify(req.query.token, secret);
+            if (!err && decoded.id != undefined) {
+                db.get("User", (err, users) => {
+                    users = JSON.parse(users);
+                    if (!err && users.length) {
+                        let currentUser = users.find(user => user.id === decoded.id);
+                        res.end(currentUser != undefined ? JSON.stringify(_.omit(currentUser, "password")) : "Not Found");
+                    }
+                })
+            }
+        }
+        res.end("Invalid User");
+    });
+
+    /*app.get("/user", (req, res, next) => {
+     if (req.query.userId) {
+     checkRoleUnAuthoriedUser(req.query.userId, "admin", function (isAdmin) {
+     if (isAdmin) {
+     db.get("User", (err, users) => {
+     users = JSON.parse(users);
+     if (!err) {
+     if (req.query.limit != undefined) {
+     users = users.splice(0, req.query.limit);
+     }
+     res.end(users.length ? JSON.stringify(users) : "[]");
+     } else {
+     res.end("No Data");
+     }
+     })
+     } else {
+     res.end("404 Not Found");
+     }
+     });
+
+     } else {
+     res.end("UNRECOGNIZED")
+     }
+     });*/
+
+    app.get("/user", (req, res, next) => {
+        db.get("User", (err, users) => {
+            users = JSON.parse(users);
+            if (!err) {
+                if (req.query.limit != undefined) {
+                    users = users.splice(0, req.query.limit);
+                }
+                res.end(users.length ? JSON.stringify(users) : "[]");
+            } else {
+                res.end("No Data");
+            }
+        })
+
+    });
+
+    app.get("/user/findAll", (req, res, next) => {
+        db.get("User", (err, users) => {
+            users = JSON.parse(users);
+            if (!err) {
+                let results = _.filter(users, _.omit(req.query, ["limit", "skip", "userId"]));
+                if (req.query.limit != undefined) {
+                    results = results.splice(0, req.query.limit);
+                }
+                res.end(results.length ? JSON.stringify(results) : "[]");
+            } else {
+                res.end("No Data");
+            }
+        })
+    });
+
+    app.get("/user/findOne", (req, res, next) => {
+        db.get("User", (err, users) => {
+            users = JSON.parse(users);
+            if (!err) {
+                let result = _.find(users, req.query);
+                res.end(result != undefined ? JSON.stringify(result) : "{}");
+            } else {
+                res.end("No Data");
+            }
+        })
+    });
 
     // ----------- User -----------//
+
+    /**
+     * Utils
+     */
+
+    function userIsInRole(token, role) {
+        db.get("User", (err, users) => {
+            users = JSON.parse(users);
+            if (!err && users.length) {
+                let decodeJWT = jsonwebtoken.verify(token, secret, (err, decoded) => {
+                    if (!err && decoded.id != undefined) {
+                        let currentUser = users.find(user => user.id === decoded.id);
+                        if (currentUser) {
+                            db.get("Roles", (err, roles) => {
+                                roles = JSON.parse(roles);
+                                if (!err && roles.length) {
+                                    let userRole = roles.find(role => role.id === currentUser.role);
+                                    return new Promise((reject, resolve) => {
+                                        resolve(userRole.role === role);
+                                    })
+                                }
+                            })
+                        }
+                    }
+                })
+            }
+        })
+    }
+
+    function checkRoleUnAuthoriedUser(userId, role, callback) {
+        db.get("User", (err, users) => {
+            users = JSON.parse(users);
+            if (!err && users.length) {
+                let currentUser = users.find(user => user.id === userId);
+                if (currentUser) {
+                    db.get("Roles", (err, roles) => {
+                        roles = JSON.parse(roles);
+                        if (!err && roles.length) {
+                            let userRole = roles.find(role => role.id === currentUser.role);
+                            callback(userRole.role === role);
+                        }
+                    })
+                }
+            }
+        });
+    }
 
     app.use((req, res, next) => {
         next("Not Found");
