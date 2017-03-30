@@ -23,9 +23,9 @@ const app = routes(new Router());
 const server = http.createServer();
 
 /**
- * Create Posts Function
+ * Create CD Function
  */
-function createPost(producers, categories, type) {
+function createCD(producers, categories, type) {
     let data = [];
     while (data.length < 500) {
         let cd = new CD({
@@ -36,7 +36,9 @@ function createPost(producers, categories, type) {
             image: faker.image.people(),
             producer: producers[Math.floor(Math.random() * producers.length)].id,
             category: categories[Math.floor(Math.random() * categories.length)].id,
-            type: type[Math.floor(Math.random() * type.length)].name
+            type: type[Math.floor(Math.random() * type.length)].name,
+            vote: 0,
+            cost: faker.random.number()
         });
         data.push(cd);
     }
@@ -140,7 +142,7 @@ const boot = (app) => {
                             db.get("Type", (err, types) => {
                                 if (!err) {
                                     types = JSON.parse(types);
-                                    createPost(producers, categories, types);
+                                    createCD(producers, categories, types);
                                 }
                             })
                         }

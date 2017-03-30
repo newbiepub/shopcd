@@ -13,6 +13,8 @@ class CD {
         this.publishedAt = faker.date.recent();
         this.category = props.category;
         this.type = props.type;
+        this.vote = props.vote < 0 ? 0 : (props.vote > 5 ? 5 : 0);
+        this.cost = props.cost;
     }
 }
 

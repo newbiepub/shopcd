@@ -5,8 +5,10 @@ const db = require("./db"),
     helmet = require('helmet'),
     cookieParser = require("cookie-parser"),
     User = require("./class/user"),
+    Cart = require("./class/cart"),
     faker = require("faker"),
-    _ = require("lodash");
+    _ = require("lodash"),
+    gateway = require('./class/payment-gateway');
 const JwtStrategy = require('passport-jwt').Strategy,
     LocalStrategy = require('passport-local').Strategy,
     ExtractJwt = require('passport-jwt').ExtractJwt,
@@ -435,6 +437,197 @@ module.exports = (app) => {
     });
 
     // ----------- User -----------//
+
+
+    //------------- Cart ---------------//
+    app.get("/cart", (req, res, next) => {
+        db.get("Cart", (err, carts) => {
+            if (err) {
+                res.end("[]");
+            } else {
+                carts = JSON.parse(carts);
+                if (req.query.limit != undefined) {
+                    carts = carts.splice(0, req.query.limit);
+                }
+                res.end(JSON.stringify(carts));
+            }
+        })
+    });
+
+    app.post("/cart/newCart", (req, res, next) => {
+        if (req.body.userId && req.body.cd) {
+            db.get("Cart", (err, cartData) => {
+                let carts = cartData != undefined ? JSON.parse(cartData) : [];
+                if (err || !carts.length) {
+                    let cartItems = [];
+                    cartItems.push({
+                        cd: req.body.cd,
+                        quantity: req.body.quantity || 1
+                    });
+                    let cart = new Cart({
+                        id: faker.random.uuid(),
+                        userId: req.body.userId,
+                        cartItem: cartItems
+                    });
+                    carts = [];
+                    carts.push(cart);
+                    db.put("Cart", JSON.stringify(carts), (err) => console.log(err));
+                } else {
+                    let userCart = carts.find(item => item.userId === req.body.userId);
+                    if (userCart) {
+                        let cartItems = userCart.cartItem;
+                        let getCurrentItem = cartItems.find(item => item.cd === req.body.cd);
+                        if (getCurrentItem) {
+                            getCurrentItem.quantity += req.body.quantity ? parseInt(req.body.quantity) : 1;
+                        } else {
+                            cartItems.push({
+                                cd: req.body.cd,
+                                quantity: req.body.quantity || 1
+                            })
+                        }
+                        carts.splice(_.indexOf(carts, userCart), 1, userCart);
+                        db.put("Cart", JSON.stringify(carts), (err) => console.log(err))
+                    }
+                }
+            })
+        }
+        res.end("Not Found");
+    });
+
+    app.post("/cart/updateCart/removeItem", (req, res, next) => {
+        if (req.body.userId && req.body.cd) {
+            db.get("Cart", (err, cartData) => {
+                let carts = JSON.parse(cartData);
+                if (!err && cartData.length) {
+                    let userCart = carts.find(item => item.userId === req.body.userId);
+                    if (userCart) {
+                        let cartItems = userCart.cartItem;
+                        let getCurrentItem = _.indexOf(cartItems, _.find(cartItems, item => item.cd === req.body.cd));
+                        if (getCurrentItem !== -1) {
+                            cartItems.splice(getCurrentItem, 1);
+                            userCart.cartItem = cartItems;
+                        }
+                        carts.splice(_.indexOf(carts, userCart), 1, userCart);
+                        db.put("Cart", JSON.stringify(carts), (err) => console.log(err));
+                    }
+                }
+            })
+        }
+        res.end("Not Found");
+    });
+
+    /**
+     * Payment Checkout
+     */
+
+    app.post("/cart/checkout", (req, res, next) => {
+        if (req.body.userId) {
+            db.get("Cart", (err, cartData) => {
+                let carts = JSON.parse(cartData);
+                if (!err && carts.length) {
+                    let userCart = carts.find(item => item.userId === req.body.userId);
+                    let getCurrentCartIndex = _.indexOf(carts, userCart);
+                    if (userCart) {
+                        gateway.customer.create({
+                            firstName: req.body.firstName,
+                            lastName: req.body.lastName,
+                            company: req.body.company,
+                            email: req.body.email,
+                            phone: req.body.phone,
+                            fax: req.body.fax,
+                            website: req.body.website,
+                            creditCard: {
+                                paymentMethodNonce: 'nonce-from-the-client',
+                                cardholderName: req.body.cardholderName,
+                                cvv: req.body.cvv,
+                                number: req.body.cardIdentity,
+                                expirationMonth: req.body.expirationMonth,
+                                expirationYear: req.body.expirationYear,
+                                options: {
+                                    verifyCard: true
+                                }
+                            }
+                        }, function (err, result) {
+                            console.log("result ", result);
+                            if (err) {
+                                next(err)
+                            } else {
+                                userCart.payment = {
+                                    customerId: result.customer.id,
+                                    merchantId: result.customer.merchantId
+                                };
+                                carts.splice(getCurrentCartIndex, 1, userCart);
+                                db.put("Cart", JSON.stringify(carts), (err) => console.log(err));
+                                res.end(JSON.stringify(result.customer));
+                            }
+                        });
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end("Not Found");
+                }
+            })
+        } else {
+            res.end("Unauthorized");
+        }
+
+
+    });
+
+    /**
+     * Payment Gateway
+     */
+    app.post("/cart/payment", (req, res, next) => {
+        if (req.body.userId) {
+            db.get("Cart", (err, cartData) => {
+                let carts = JSON.parse(cartData);
+                if (!err && carts.length) {
+                    let userCart = carts.find(item => item.userId === req.body.userId);
+                    if (userCart) {
+                        let cartItemIds = _.map(userCart.cartItem, item => item.cd);
+                        db.get("CD", (err, disks) => {
+                            let data = JSON.parse(disks);
+                            if (!err && data.length) {
+                                let cartCD = _.filter(data, (item) => _.includes(cartItemIds, item.id));
+                                if (cartCD.length) {
+                                    let totalCost = cartCD.reduce((total, cd) => {
+                                        return total.cost * userCart.cartItem.find(item => item.cd === total.id).quantity + cd.cost * userCart.cartItem.find(item => item.cd === cd.id).quantity;
+                                    });
+                                    if (userCart.payment != undefined && !userCart.done) {
+                                        gateway.transaction.sale({
+                                            amount: totalCost,
+                                            customerId: userCart.payment.customerId
+                                        }, function (err, result) {
+                                            if (err) {
+                                                next(err);
+                                            }
+                                            if (result.success) {
+                                                userCart.done = true;
+                                                carts.splice(_.indexOf(carts, userCart), 1, userCart);
+                                                db.put("Cart", JSON.stringify(carts), (err) => console.log(err));
+                                                res.end(JSON.stringify({
+                                                    transactionId: result.transaction.id
+                                                }));
+                                            } else {
+                                                res.end(result.message);
+                                            }
+                                        });
+                                    } else {
+                                        res.end("Unauthorized");
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            })
+        } else {
+            res.end("Unauthorized");
+        }
+    });
+
+    //-------------- Cart ---------------//
 
     /**
      * Utils
