@@ -1,9 +1,10 @@
+const faker = require("faker");
 /**
  * Define User Model
  */
 class User {
     constructor(props) {
-        this.id = props.id;
+        this.id = faker.random.uuid();
         this.username = props.username;
         this.password = props.password;
         this.profile = props.profile;

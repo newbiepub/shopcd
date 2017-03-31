@@ -29,7 +29,6 @@ function createCD(producers, categories, type) {
     let data = [];
     while (data.length < 500) {
         let cd = new CD({
-            id: faker.random.uuid(),
             title: faker.lorem.words(),
             summary: faker.lorem.sentences(),
             description: faker.lorem.paragraphs(),
@@ -60,12 +59,10 @@ const boot = (app) => {
     db.get("Roles", (err, res) => {
         if (err) {
             let adminRole = new Role({
-                id: faker.random.uuid(),
                 role: "admin",
                 description: "Admin Role"
             });
             let userRole = new Role({
-                id: faker.random.uuid(),
                 role: "user",
                 description: "User Role"
             });
@@ -80,7 +77,6 @@ const boot = (app) => {
             let producers = [];
             while (producers.length < 5) {
                 let producer = new Producer({
-                    id: faker.random.uuid(),
                     producerName: faker.company.companyName(),
                     email: faker.internet.email(),
                     phone: faker.phone.phoneNumber(),
@@ -100,7 +96,6 @@ const boot = (app) => {
                 category = [];
             _.each(categories, (item) => {
                 let categoryItem = new Category({
-                    id: faker.random.uuid(),
                     name: item,
                     priority: faker.random.number()
                 });
@@ -119,7 +114,6 @@ const boot = (app) => {
                 data = [];
             _.each(types, (type) => {
                 let typeItem = new Type({
-                    id: faker.random.uuid(),
                     name: type
                 });
                 data.push(typeItem);
@@ -165,7 +159,6 @@ const boot = (app) => {
                     password("h1n2i3m4").hash(function (err, hash) {
                         if (!err) {
                             let user = new User({
-                                id: faker.random.uuid(),
                                 username: username,
                                 password: hash,
                                 profile: {

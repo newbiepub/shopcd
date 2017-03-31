@@ -1,6 +1,7 @@
+const faker = require("faker");
 class Role {
     constructor(props) {
-        this.id = props.id;
+        this.id = faker.random.uuid();
         this.role = props.role;
         this.description = props.description || "";
     }

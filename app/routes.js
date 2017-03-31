@@ -6,6 +6,9 @@ const db = require("./db"),
     cookieParser = require("cookie-parser"),
     User = require("./class/user"),
     Cart = require("./class/cart"),
+    CD = require("./class/cd"),
+    Category = require("./class/category"),
+    Producer = require("./class/producer"),
     faker = require("faker"),
     _ = require("lodash"),
     gateway = require('./class/payment-gateway');
@@ -56,6 +59,160 @@ module.exports = (app) => {
                 res.end(JSON.stringify(data));
             }
         })
+    });
+
+    /**
+     * Insert CD
+     */
+    app.post("/cd/new", (req, res, next) => {
+        db.get("CD", (err, cd) => {
+            let data = JSON.parse(cd);
+            if (err && !data.length) {
+                data = [];
+            }
+            let newCD = {
+                title: faker.lorem.words(),
+                summary: faker.lorem.sentences(),
+                description: faker.lorem.paragraphs(),
+                image: faker.image.image(),
+                cost: faker.random.number()
+            };
+            Object.assign(newCD, req.body);
+            let cdData = new CD(newCD);
+            data.push(cdData);
+            db.put("CD", JSON.stringify(data), (err) => {
+                if (err) {
+                    res.end(JSON.stringify(err));
+                } else {
+                    res.end(JSON.stringify({success: true}));
+                }
+            })
+        });
+    });
+
+    /**
+     * Update CD
+     */
+
+    app.put("/cd/update", (req, res, next) => {
+        if (req.query.id) {
+            db.get("CD", (err, cd) => {
+                let data = JSON.parse(cd);
+                if (!err && data.length) {
+                    let getCD = data.find(item => item.id === req.query.id);
+                    if (getCD) {
+                        Object.assign(getCD, _.omit(req.body, "id"));
+                        data.splice(_.indexOf(data, getCD), 1, getCD);
+                        db.put("CD", JSON.stringify(data), err => {
+                            if (err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({
+                                    success: true
+                                }));
+                            }
+                        })
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end(JSON.stringify({
+                        success: false
+                    }));
+                }
+            })
+        } else {
+            res.end("Unauthorized");
+        }
+    });
+
+    /**
+     * Delete CD
+     */
+
+    app.post("/cd/delete", (req, res, next) => {
+        if (req.body.id) {
+            db.get("CD", (err, cd) => {
+                let data = JSON.parse(cd);
+                if (!err && data.length) {
+                    let currentCD = data.find(item => item.id === req.body.id),
+                        getIndex = _.indexOf(data, currentCD);
+                    if (currentCD) {
+                        data.splice(getIndex, 1);
+                        db.put("CD", JSON.stringify(data), (err) => {
+                            if(err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({success: true}))
+                            }
+                        })
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end("Empty");
+                }
+            })
+        } else {
+            req.end("Unauthorized");
+        }
+    });
+
+    /**
+     * Up Vote
+     */
+
+    app.post("/cd/upVote", (req, res, next) => {
+       if(req.body.id && req.body.userId && req.body.vote) {
+           db.get("CD", (err, cd) => {
+               let data = JSON.parse(cd);
+               if(!err && data.length) {
+                   let currentCD = data.find(item => item.id === req.body.id);
+                   if(currentCD) {
+                       currentCD.vote += parseInt(req.body.vote);
+                       currentCD.userVoted++;
+                       data.splice(_.indexOf(data, currentCD), 1, currentCD);
+                       db.put("CD", JSON.stringify(data), (err) => {
+                           if(err) {
+                               res.end(JSON.stringify(err));
+                           } else {
+                               res.end(JSON.stringify({success: true}));
+                           }
+                       })
+                   } else {
+                        res.end("Not Found");
+                   }
+               } else {
+                   res.end("Empty");
+               }
+           })
+       } else {
+           res.end("Unauthorized");
+       }
+    });
+
+    /**
+     * Get Vote
+     */
+
+    app.get("/cd/vote", (req, res, next) => {
+        if(req.query.id) {
+            db.get("CD", (err, cd) => {
+                let data = JSON.parse(cd);
+                if(!err && data.length) {
+                    let currentCD = data.find(item => item.id === req.query.id);
+                    if(currentCD) {
+                        res.end(JSON.stringify({vote: parseFloat(currentCD.vote / currentCD.userVoted)}));
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end("Empty");
+                }
+            })
+        } else {
+            res.end(JSON.stringify({vote: 0}));
+        }
     });
 
     /**
@@ -119,6 +276,97 @@ module.exports = (app) => {
     });
 
     /**
+     * Insert Category
+     */
+    app.post("/category/new", (req, res, next) => {
+        db.get("Category", (err, category) => {
+            let data = JSON.parse(category);
+            if (err && !data.length) {
+                data = [];
+            }
+            let newCategory = {
+                name: faker.lorem.words()
+            };
+            Object.assign(newCategory, req.body);
+            let categoryData = new Category(newCategory);
+            data.push(categoryData);
+            db.put("Category", JSON.stringify(data), (err) => {
+                if (err) {
+                    res.end(JSON.stringify(err));
+                } else {
+                    res.end(JSON.stringify({success: true}));
+                }
+            })
+        });
+    });
+
+    /**
+     * Update Category
+     */
+    app.put("/category/update", (req, res, next) => {
+        if (req.query.id) {
+            db.get("Category", (err, category) => {
+                let data = JSON.parse(category);
+                if (!err && data.length) {
+                    let getCategory = data.find(item => item.id === req.query.id);
+                    if (getCategory) {
+                        Object.assign(getCategory, _.omit(req.body, "id"));
+                        data.splice(_.indexOf(data, getCategory), 1, getCategory);
+                        db.put("Category", JSON.stringify(data), err => {
+                            if (err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({
+                                    success: true
+                                }));
+                            }
+                        })
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end(JSON.stringify({
+                        success: false
+                    }));
+                }
+            })
+        } else {
+            res.end("Unauthorized");
+        }
+    });
+
+    /**
+     * Delete Category
+     */
+    app.post("/category/delete", (req, res, next) => {
+        if (req.body.id) {
+            db.get("Category", (err, category) => {
+                let data = JSON.parse(category);
+                if (!err && data.length) {
+                    let currentCategory = data.find(item => item.id === req.body.id),
+                        getIndex = _.indexOf(data, currentCategory);
+                    if (currentCategory) {
+                        data.splice(getIndex, 1);
+                        db.put("Category", JSON.stringify(data), (err) => {
+                            if(err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({success: true}))
+                            }
+                        })
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end("Empty");
+                }
+            })
+        } else {
+            req.end("Unauthorized");
+        }
+    });
+
+    /**
      * Category FindAll
      */
 
@@ -169,7 +417,7 @@ module.exports = (app) => {
     // ------------ Producer ------------- //
 
     /**
-     * Category count
+     * Producer count
      */
     app.get("/producer/count", (req, res) => {
         db.get("Producer", (err, data) => {
@@ -182,7 +430,98 @@ module.exports = (app) => {
     });
 
     /**
-     * Category FindAll
+     * Insert Category
+     */
+    app.post("/producer/new", (req, res, next) => {
+        db.get("Producer", (err, producer) => {
+            let data = JSON.parse(producer);
+            if (err && !data.length) {
+                data = [];
+            }
+            let newProducer = {
+                producerName: faker.company.companyName
+            };
+            Object.assign(newProducer, req.body);
+            let producerData = new Producer(newProducer);
+            data.push(producerData);
+            db.put("Producer", JSON.stringify(data), (err) => {
+                if (err) {
+                    res.end(JSON.stringify(err));
+                } else {
+                    res.end(JSON.stringify({success: true}));
+                }
+            })
+        });
+    });
+
+    /**
+     * Update Category
+     */
+    app.put("/producer/update", (req, res, next) => {
+        if (req.query.id) {
+            db.get("Producer", (err, producer) => {
+                let data = JSON.parse(producer);
+                if (!err && data.length) {
+                    let getProducer = data.find(item => item.id === req.query.id);
+                    if (getProducer) {
+                        Object.assign(getProducer, _.omit(req.body, "id"));
+                        data.splice(_.indexOf(data, getProducer), 1, getProducer);
+                        db.put("Producer", JSON.stringify(data), err => {
+                            if (err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({
+                                    success: true
+                                }));
+                            }
+                        })
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end(JSON.stringify({
+                        success: false
+                    }));
+                }
+            })
+        } else {
+            res.end("Unauthorized");
+        }
+    });
+
+    /**
+     * Delete Category
+     */
+    app.post("/producer/delete", (req, res, next) => {
+        if (req.body.id) {
+            db.get("Producer", (err, category) => {
+                let data = JSON.parse(category);
+                if (!err && data.length) {
+                    let currentProducer = data.find(item => item.id === req.body.id),
+                        getIndex = _.indexOf(data, currentProducer);
+                    if (currentProducer) {
+                        data.splice(getIndex, 1);
+                        db.put("Producer", JSON.stringify(data), (err) => {
+                            if(err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({success: true}))
+                            }
+                        })
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end("Empty");
+                }
+            })
+        } else {
+            req.end("Unauthorized");
+        }
+    });
+
+    /**
+     * Producer FindAll
      */
 
     app.get("/producer/findAll", (req, res) => {
@@ -199,7 +538,7 @@ module.exports = (app) => {
     });
 
     /**
-     * Category FindOne
+     * Producer FindOne
      */
     app.get("/producer/findOne", (req, res) => {
         db.get("Producer", (err, data) => {
@@ -320,7 +659,6 @@ module.exports = (app) => {
                             let userRole = roles.find(role => role.role === "user");
                             passwordSalt(req.body.password).hash((err, hash) => {
                                 let newUser = new User({
-                                    id: faker.random.uuid(),
                                     username: req.body.username,
                                     password: hash,
                                     profile: {
@@ -465,7 +803,6 @@ module.exports = (app) => {
                         quantity: req.body.quantity || 1
                     });
                     let cart = new Cart({
-                        id: faker.random.uuid(),
                         userId: req.body.userId,
                         cartItem: cartItems
                     });

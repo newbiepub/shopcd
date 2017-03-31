@@ -4,7 +4,7 @@ const faker = require("faker");
  * */
 class CD {
     constructor(props) {
-        this.id = props.id;
+        this.id = faker.random.uuid();
         this.title = props.title;
         this.summary = props.summary;
         this.description = props.description;
@@ -13,7 +13,8 @@ class CD {
         this.publishedAt = faker.date.recent();
         this.category = props.category;
         this.type = props.type;
-        this.vote = props.vote < 0 ? 0 : (props.vote > 5 ? 5 : 0);
+        this.vote = faker.random.number();
+        this.userVoted = faker.random.number();
         this.cost = props.cost;
     }
 }

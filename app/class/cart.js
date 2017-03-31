@@ -1,9 +1,10 @@
+const faker = require("faker");
 /**
  * Define Cart Model
  */
 class Cart {
     constructor(props) {
-        this.id = props.id;
+        this.id = faker.random.uuid();
         this.userId = props.userId;
         this.cartItem = props.cartItem;
         this.createdAt = new Date();

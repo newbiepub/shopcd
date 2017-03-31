@@ -1,9 +1,10 @@
+const faker = require("faker");
 /**
  * Define Category Model
  */
 class Category {
     constructor(props) {
-        this.id = props.id;
+        this.id = faker.random.uuid();
         this.name = props.name;
         this.priority = props.priority;
     }
