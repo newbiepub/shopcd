@@ -36,7 +36,6 @@ function createCD(producers, categories, type) {
             producer: producers[Math.floor(Math.random() * producers.length)].id,
             category: categories[Math.floor(Math.random() * categories.length)].id,
             type: type[Math.floor(Math.random() * type.length)].name,
-            vote: 0,
             cost: faker.random.number()
         });
         data.push(cd);

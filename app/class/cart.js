@@ -10,6 +10,7 @@ class Cart {
         this.createdAt = new Date();
         this.approved = false;
         this.done = false;
+        this.payment = props.payment
     }
 }
 
