@@ -156,7 +156,7 @@ const boot = (app) => {
                     let adminRole = roles.find(role => role.role === "admin");
                     let username = "lamnguyen2306";
                     // Create password with salt and hash
-                    password("h1n2i3m4").hash(function (err, hash) {
+                    password("123456").hash(function (err, hash) {
                         if (!err) {
                             let user = new User({
                                 username: username,
