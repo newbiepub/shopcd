@@ -1,38 +1,28 @@
 {
-  "name": "shopcd",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "shopApp",
+  "version": "0.0.1",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "node node_modules/react-native/local-cli/cli.js start",
+    "test": "jest"
   },
-  "author": "Lam Nguyen",
-  "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.17.1",
-    "braintree": "^2.0.2",
-    "cookie-parser": "^1.4.3",
-    "csurf": "^1.9.0",
-    "faker": "^4.1.0",
-    "finalhandler": "^1.0.0",
-    "helmet": "2.1.0",
-    "jsonwebtoken": "^7.3.0",
-    "level": "^1.6.0",
-    "lodash": "^4.17.4",
-    "micro": "latest",
-    "passport": "^0.3.2",
-    "passport-jwt": "^2.2.1",
-    "passport-local": "^1.0.0",
-    "passport-strategy": "^1.0.0",
-    "password-hash-and-salt": "^0.1.4",
-    "router": "^1.3.0"
+    "native-base": "^2.1.0",
+    "react": "15.4.2",
+    "react-native": "0.42.3",
+    "react-native-star-rating": "^1.0.7",
+    "react-pure-render": "^1.0.2",
+    "react-redux": "^5.0.3",
+    "redux": "^3.6.0",
+    "redux-thunk": "^2.2.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.23.0",
-    "babel-polyfill": "^6.23.0",
-    "babel-preset-env": "^1.2.0",
-    "babel-register": "^6.23.0",
-    "nodemon": "^1.11.0"
+    "babel-jest": "19.0.0",
+    "babel-preset-react-native": "1.9.1",
+    "jest": "19.0.2",
+    "react-test-renderer": "15.4.2"
+  },
+  "jest": {
+    "preset": "react-native"
   }
 }
