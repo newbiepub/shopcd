@@ -140,7 +140,7 @@ module.exports = (app) => {
                     if (currentCD) {
                         data.splice(getIndex, 1);
                         db.put("CD", JSON.stringify(data), (err) => {
-                            if(err) {
+                            if (err) {
                                 res.end(JSON.stringify(err));
                             } else {
                                 res.end(JSON.stringify({success: true}))
@@ -163,32 +163,32 @@ module.exports = (app) => {
      */
 
     app.post("/cd/upVote", (req, res, next) => {
-       if(req.body.id && req.body.userId && req.body.vote) {
-           db.get("CD", (err, cd) => {
-               let data = JSON.parse(cd);
-               if(!err && data.length) {
-                   let currentCD = data.find(item => item.id === req.body.id);
-                   if(currentCD) {
-                       currentCD.vote += parseInt(req.body.vote);
-                       currentCD.userVoted++;
-                       data.splice(_.indexOf(data, currentCD), 1, currentCD);
-                       db.put("CD", JSON.stringify(data), (err) => {
-                           if(err) {
-                               res.end(JSON.stringify(err));
-                           } else {
-                               res.end(JSON.stringify({success: true}));
-                           }
-                       })
-                   } else {
+        if (req.body.id && req.body.userId && req.body.vote) {
+            db.get("CD", (err, cd) => {
+                let data = JSON.parse(cd);
+                if (!err && data.length) {
+                    let currentCD = data.find(item => item.id === req.body.id);
+                    if (currentCD) {
+                        currentCD.vote += parseInt(req.body.vote);
+                        currentCD.userVoted++;
+                        data.splice(_.indexOf(data, currentCD), 1, currentCD);
+                        db.put("CD", JSON.stringify(data), (err) => {
+                            if (err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({success: true}));
+                            }
+                        })
+                    } else {
                         res.end("Not Found");
-                   }
-               } else {
-                   res.end("Empty");
-               }
-           })
-       } else {
-           res.end("Unauthorized");
-       }
+                    }
+                } else {
+                    res.end("Empty");
+                }
+            })
+        } else {
+            res.end("Unauthorized");
+        }
     });
 
     /**
@@ -196,12 +196,12 @@ module.exports = (app) => {
      */
 
     app.get("/cd/vote", (req, res, next) => {
-        if(req.query.id) {
+        if (req.query.id) {
             db.get("CD", (err, cd) => {
                 let data = JSON.parse(cd);
-                if(!err && data.length) {
+                if (!err && data.length) {
                     let currentCD = data.find(item => item.id === req.query.id);
-                    if(currentCD) {
+                    if (currentCD) {
                         res.end(JSON.stringify({vote: parseFloat(currentCD.vote / currentCD.userVoted)}));
                     } else {
                         res.end("Not Found");
@@ -348,7 +348,7 @@ module.exports = (app) => {
                     if (currentCategory) {
                         data.splice(getIndex, 1);
                         db.put("Category", JSON.stringify(data), (err) => {
-                            if(err) {
+                            if (err) {
                                 res.end(JSON.stringify(err));
                             } else {
                                 res.end(JSON.stringify({success: true}))
@@ -502,7 +502,7 @@ module.exports = (app) => {
                     if (currentProducer) {
                         data.splice(getIndex, 1);
                         db.put("Producer", JSON.stringify(data), (err) => {
-                            if(err) {
+                            if (err) {
                                 res.end(JSON.stringify(err));
                             } else {
                                 res.end(JSON.stringify({success: true}))
@@ -707,6 +707,40 @@ module.exports = (app) => {
         res.end("Invalid User");
     });
 
+    /**
+     * Update Profile
+     */
+    app.post("/user/profile/update", (req, res, next) => {
+        if (req.body.userId) {
+            db.get("User", (err, data) => {
+                let users = JSON.parse(data);
+                if (!err && users.length) {
+                    let currentUser = users.find(user => user.id === req.body.userId);
+                    console.log(currentUser);
+                    if (currentUser) {
+                        console.log(currentUser);
+                        Object.assign(currentUser.profile, _.omit(req.body, ["userId", "id"]));
+                        users.splice(_.indexOf(users, currentUser), 1, currentUser);
+                        console.log(currentUser);
+                        db.put("User", JSON.stringify(users), (err) => {
+                            if (!err) {
+                                res.end(JSON.stringify({success: true}));
+                            } else {
+                                res.end(JSON.stringify(err));
+                            }
+                        })
+                    } else {
+                        res.end("Not Found");
+                    }
+                } else {
+                    res.end("Not Found");
+                }
+            })
+        } else {
+            res.end("Unauthorized");
+        }
+    });
+
     /*app.get("/user", (req, res, next) => {
      if (req.query.userId) {
      checkRoleUnAuthoriedUser(req.query.userId, "admin", function (isAdmin) {
@@ -779,15 +813,48 @@ module.exports = (app) => {
 
     //------------- Cart ---------------//
     app.get("/cart", (req, res, next) => {
-        db.get("Cart", (err, carts) => {
+        db.get("Cart", (err, data) => {
             if (err) {
                 res.end("[]");
             } else {
-                carts = JSON.parse(carts);
+               let carts = JSON.parse(data);
                 if (req.query.limit != undefined) {
                     carts = carts.splice(0, req.query.limit);
                 }
                 res.end(JSON.stringify(carts));
+            }
+        })
+    });
+    /**
+     * Cart FindAll
+     */
+    app.get("/cart/findAll", (req, res, next) => {
+        db.get("Cart", (err, carts) => {
+            if (!err) {
+                carts = JSON.parse(carts);
+                let results = _.filter(carts, _.omit(req.query, ["limit", "skip", "userId"]));
+                if (req.query.limit != undefined) {
+                    results = results.splice(0, req.query.limit);
+                }
+                res.end(results.length ? JSON.stringify(results) : "[]");
+            } else {
+                res.end("No Data");
+            }
+        })
+    });
+
+    /**
+     * Cart FindOne
+     */
+
+    app.get("/cart/findOne", (req, res, next) => {
+        db.get("Cart", (err, data) => {
+            if (!err) {
+                let carts = JSON.parse(data);
+                let result = _.find(carts, req.query);
+                res.end(result != undefined ? JSON.stringify(result) : "{}");
+            } else {
+                res.end("No Data");
             }
         })
     });
@@ -808,7 +875,13 @@ module.exports = (app) => {
                     });
                     carts = [];
                     carts.push(cart);
-                    db.put("Cart", JSON.stringify(carts), (err) => console.log(err));
+                    db.put("Cart", JSON.stringify(carts), (err) => {
+                        if (err) {
+                            res.end(JSON.stringify(err));
+                        } else {
+                            res.end(JSON.stringify({success: true}));
+                        }
+                    });
                 } else {
                     let userCart = carts.find(item => item.userId === req.body.userId);
                     if (userCart) {
@@ -823,12 +896,37 @@ module.exports = (app) => {
                             })
                         }
                         carts.splice(_.indexOf(carts, userCart), 1, userCart);
-                        db.put("Cart", JSON.stringify(carts), (err) => console.log(err))
+                        db.put("Cart", JSON.stringify(carts), (err) => {
+                            if (err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({success: true}));
+                            }
+                        })
+                    } else {
+                        let cartItems = [];
+                        cartItems.push({
+                            cd: req.body.cd,
+                            quantity: req.body.quantity || 1
+                        });
+                        let cart = new Cart({
+                            userId: req.body.userId,
+                            cartItem: cartItems
+                        });
+                        carts.push(cart);
+                        db.put("Cart", JSON.stringify(carts), (err) => {
+                            if (err) {
+                                res.end(JSON.stringify(err));
+                            } else {
+                                res.end(JSON.stringify({success: true}));
+                            }
+                        });
                     }
                 }
             })
+        } else {
+            res.end(JSON.stringify({err: "Require Id"}));
         }
-        res.end("Not Found");
     });
 
     app.post("/cart/updateCart/removeItem", (req, res, next) => {
@@ -878,8 +976,8 @@ module.exports = (app) => {
                                 cardholderName: req.body.cardholderName,
                                 cvv: req.body.cvv,
                                 number: req.body.cardIdentity,
-                                expirationMonth: req.body.expirationMonth,
-                                expirationYear: req.body.expirationYear,
+                                expirationMonth: "02",
+                                expirationYear: "2022",
                                 options: {
                                     verifyCard: true
                                 }
@@ -890,6 +988,14 @@ module.exports = (app) => {
                                 next(err)
                             } else {
                                 userCart.payment = {
+                                    firstName: req.body.firstName,
+                                    lastName: req.body.lastName,
+                                    company: req.body.company,
+                                    email: req.body.email,
+                                    phone: req.body.phone,
+                                    fax: req.body.fax,
+                                    website: req.body.website,
+                                    cardholderName: req.body.cardholderName,
                                     customerId: result.customer.id,
                                     merchantId: result.customer.merchantId
                                 };
@@ -899,14 +1005,14 @@ module.exports = (app) => {
                             }
                         });
                     } else {
-                        res.end("Not Found");
+                        res.end(JSON.stringify({err: "Not Found"}));
                     }
                 } else {
-                    res.end("Not Found");
+                    res.end(JSON.stringify({err: "Not Found"}));
                 }
             })
         } else {
-            res.end("Unauthorized");
+            res.end(JSON.stringify({err: "Unauthorized"}));
         }
 
 
@@ -937,10 +1043,11 @@ module.exports = (app) => {
                                             customerId: userCart.payment.customerId
                                         }, function (err, result) {
                                             if (err) {
-                                                next(err);
+                                                res.end(JSON.stringify(err))
                                             }
                                             if (result.success) {
-                                                userCart.done = true;
+                                                userCart.cartDone = userCart.cartItem;
+                                                userCart.cartItem = [];
                                                 carts.splice(_.indexOf(carts, userCart), 1, userCart);
                                                 db.put("Cart", JSON.stringify(carts), (err) => console.log(err));
                                                 res.end(JSON.stringify({
@@ -951,7 +1058,7 @@ module.exports = (app) => {
                                             }
                                         });
                                     } else {
-                                        res.end("Unauthorized");
+                                        res.end(JSON.stringify({err: "Unauthorized"}));
                                     }
                                 }
                             }
@@ -960,11 +1067,64 @@ module.exports = (app) => {
                 }
             })
         } else {
-            res.end("Unauthorized");
+            res.end(JSON.stringify({err: "Unauthorized"}));
         }
     });
 
     //-------------- Cart ---------------//
+
+
+    //-------------- Role ---------------//
+
+    /**
+     * FindAll Role
+     */
+
+    app.get("/roles/findAll", (req, res) => {
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        db.get("Roles", (err, data) => {
+            if (!err && data) {
+                data = JSON.parse(data);
+                let results = _.filter(data, _.omit(req.query, ["limit", "skip"]));
+                if (req.query.limit != undefined) {
+                    results = results.splice(0, req.query.limit);
+                }
+                res.end(results.length ? JSON.stringify(results) : "[]");
+            }
+        })
+    });
+
+    /**
+     * FindOne Role
+     */
+    app.get("/roles/findOne", (req, res) => {
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        db.get("Roles", (err, data) => {
+            if (!err && data != undefined) {
+                data = JSON.parse(data);
+                let result = _.find(data, req.query);
+                res.end(result != undefined ? JSON.stringify(result) : "{}");
+            }
+        })
+    });
+
+    app.get("/roles", (req, res) => {
+        db.get("Roles", (err, value) => {
+            if (!err && value != undefined) {
+                let data = JSON.parse(value);
+                if (!err) {
+                    if (req.query.limit != undefined) {
+                        data = data.splice(0, req.query.limit);
+                    }
+                    res.end(data.length ? JSON.stringify(data) : "[]");
+                } else {
+                    res.end("No Data");
+                }
+            }
+        })
+    });
+
+    //-------------- Role ---------------//
 
     /**
      * Utils
